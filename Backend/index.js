@@ -82,8 +82,15 @@ app.post('/api/violations', (request, response) => {
   })
 
 app.get('/', (req, res) => {
-    res.send('<h1>Hello World!</h1>')
-  })
+  let violations = pilotData
+  for (const violation in violations){
+    res.write(`<p>Pilot: ${pilotData[violation]["firstName"]} ${pilotData[violation]["lastName"]} (${pilotData[violation]["phoneNumber"]}, ${pilotData[violation]["email"]})</p>`)
+    res.write(`<p>Closest distance from nest: ${Math.floor(Math.min(...pilotData[violation]["distance"])/100)} meters from ${pilotData[violation]["violations"].length} violation(s)</p>`)
+    res.write('<p>-------</p>')
+  }
+  res.end()  
+})
+
 
 app.get('/api/violations', (req, res) => {
   res.json(pilotData)
