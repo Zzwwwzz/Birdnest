@@ -1,78 +1,33 @@
 const express = require('express')
+require('express-async-errors')
 const app = express()
 const morgan = require('morgan')
 const cors = require('cors')
 
-const xml2js = require('xml2js')
-
 require('dotenv').config()
 
-const Pilot = require('./models/pilot')
+const Drone = require('./modules/drone')
+const Pilot = require('./modules/pilot')
 
-const calculateDistance = ( position ) => {
-    let x = position[0]
-    let y = position[1]
-    return (Math.sqrt((x - 250000) ** 2 + (y - 250000) ** 2))
-}
+app.use(cors())
+app.use(express.json())
 
-const parseDrones = (data) => {
-    const timestamp = new Date(data.report.capture[0]['$'].snapshotTimestamp)
-    const drones = data.report.capture[0].drone.map(drone => ({
-        serialNumber: drone.serialNumber[0],
-        position: [parseFloat(drone.positionX[0]),
-                    parseFloat(drone.positionY[0])],
-        distance: calculateDistance([parseFloat(drone.positionX[0]),
-                                     parseFloat(drone.positionY[0])]),
-        timestamp: timestamp
-        }))
-    return { drones, timestamp }
-    }
-
-const parsePilots = (pilotData) => {
-    const pilot = {
-        firstName: pilotData.firstName,
-        lastName: pilotData.lastName,
-        phoneNumber: pilotData.phoneNumber,
-        email: pilotData.email
-        }
-    return pilot
-    }
-
-const getDrones = async () => {
-    let data = await fetch('https://assignments.reaktor.com/birdnest/drones')
-    .then(response => response.text())
-    .then(xml => {return xml2js.parseStringPromise(xml)})
-    .catch(console.error)
-
-    return parseDrones(data)
-}
-
-const getPilots = async (drone) => {
-    let pilotData = await fetch(
-        `http://assignments.reaktor.com/birdnest/pilots/${drone.serialNumber}`)
-    .then(response => response.json())
-    .then(data => {return data})
-    .catch(console.error)
-
-    return parsePilots(pilotData)
-}
+morgan.token('body',  (req) => JSON.stringify(req.body))
+app.use(morgan(':method :url :status :res[content-length] - :response-time ms :body'))
 
 const getViolations = async (pilotData) => {
-    try {
-    const data = await getDrones()
+    const data = await Drone.getDrones()
     const drones = data.drones
     const timestamp = data.timestamp
     
     for (const drone of drones) {
-      const distance = calculateDistance(drone.position)
-      if (distance <= 100000) {
-          let pilot = await getPilots(drone)
+      if (drone.distance <= 100000) {
+          let pilot = await Pilot.getPilots(drone)
 
           if (drone.serialNumber in pilotData) {
             pilotData[drone.serialNumber]["violations"].push(drone.position)
             pilotData[drone.serialNumber]["distance"].push(drone.distance)
             pilotData[drone.serialNumber]["last_seen"] = data.timestamp
-            pilotData[drone.serialNumber]["last_seen_time"] = data.timestamp
           } else {
             pilotData[drone.serialNumber] = pilot
             pilotData[drone.serialNumber]["distance"] = [drone.distance]
@@ -88,68 +43,67 @@ const getViolations = async (pilotData) => {
         delete pilotData[serialNumber];
       }
      }
-    return pilotData } catch (error) {
-		console.log(error);
-	}
+    return pilotData
 
   }
 
+const printViolations = (violations, pilotData) => {
 
-  const printViolations = (violations, pilotData) => {
+  for (const violation in violations){
+      console.log(`Pilot: ${pilotData[violation]["firstName"]} ${pilotData[violation]["lastName"]} (${pilotData[violation]["phoneNumber"]}, ${pilotData[violation]["email"]})`)
+      console.log(`Closest distance from nest: ${Math.floor(Math.min(...pilotData[violation]["distance"])/100)} meters from ${pilotData[violation]["violations"].length} violation(s)`)
+      console.log()
+  }
+}
 
-    for (const violation in violations){
-        console.log(`Pilot: ${pilotData[violation]["firstName"]} ${pilotData[violation]["lastName"]} (${pilotData[violation]["phoneNumber"]}, ${pilotData[violation]["email"]})`)
-        console.log(`Closest distance from nest: ${Math.floor(Math.min(...pilotData[violation]["distance"])/100)} meters from ${pilotData[violation]["violations"].length} violation(s)`)
-        console.log()
+app.post('/api/violations', (request, response) => {
+    const body = request.body
+  
+    if (!body.content) {
+      return response.status(400).json({ 
+        error: 'content missing' 
+      })
     }
+  
+    const pilot = {
+      droneSN: body.droneSN,
+      firstname: body.firstName,
+      lastName: body.lastName,
+      phoneNumber: body.phoneNumber,
+      email: body.email,
+      distance: body.distances,
+      violations: body.violations,
+      last_seen: body.last_seen
+    }
+  
+    pilotData = pilotData.concat(pilot)
+  
+    response.json(pilot)
+  })
+
+app.get('/', (req, res) => {
+    res.send('<h1>Hello World!</h1>')
+  })
+
+app.get('/api/violations', (req, res) => {
+  res.json(pilotData)
+})
+
+app.get('/api/violations/:id', (request, response) => {
+  const pilot = pilotData[request.params.id]
+
+  if (pilot) {
+      response.json(pilot)
+  } else {
+      response.status(404).end()
   }
+})
 
-// app.post('/api/notes', (request, response) => {
-//     const body = request.body
-  
-//     if (!body.content) {
-//       return response.status(400).json({ 
-//         error: 'content missing' 
-//       })
-//     }
-  
-//     const note = {
-//       content: body.content,
-//       important: body.important || false,
-//       date: new Date(),
-//       id: generateId(),
-//     }
-  
-//     notes = notes.concat(note)
-  
-//     response.json(note)
-//   })
+app.delete('/api/violations/:id', (request, response) => {
+  pilotData = pilotData.filter(pilot => pilot.droneSN !== request.params.id)
 
-// app.get('/', (req, res) => {
-//     res.send('<h1>Hello World!</h1>')
-//   })
-
-// app.get('/api/drones', (req, res) => {
-// res.json(notes)
-// })
-
-// app.get('/api/notes/:id', (request, response) => {
-// const id = Number(request.params.id)
-// const note = notes.find(note => note.id === id)
-
-// if (note) {
-//     response.json(note)
-// } else {
-//     response.status(404).end()
-// }
-// })
-
-// app.delete('/api/notes/:id', (request, response) => {
-// const id = Number(request.params.id)
-// notes = notes.filter(note => note.id !== id)
-
-// response.status(204).end()
-// })
+response.status(204).end()
+})
 
 const PORT = process.env.PORT || 3001
 app.listen(PORT, () => {
