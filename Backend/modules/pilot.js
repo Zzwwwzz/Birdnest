@@ -1,10 +1,14 @@
-const parsePilots = (pilotData, droneSerialNumber) => {
+const parsePilots = (pilotData, drone) => {
     const pilot = {
-        droneSN: droneSerialNumber,
+        _id : drone.serialNumber,
+        serialNumber: drone.serialNumber,
         firstName: pilotData.firstName,
         lastName: pilotData.lastName,
         phoneNumber: pilotData.phoneNumber,
-        email: pilotData.email
+        email: pilotData.email,
+        violations : [drone.position],
+        distance : [drone.distance],
+        last_seen : drone.timestamp
         }
     return pilot
     }
@@ -16,7 +20,7 @@ const getPilots = async (drone) => {
     .then(data => {return data})
     .catch(console.error)
 
-    return parsePilots(pilotData, drone.serialNumber)
+    return parsePilots(pilotData, drone)
 }
 
 module.exports = {getPilots}
