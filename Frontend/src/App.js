@@ -12,17 +12,23 @@ const closestViolation = (pilots) => {
   }
 }
 
-const App = () => {
-  const [pilots, setPilots] = useState([])
-
-  useEffect(() => {
-    const intervalId = setInterval(() =>{
-
-    pilotService
+const getDrones = (setPilots) => {
+      pilotService
       .getAll()
       .then(allPilots => {
         setPilots(allPilots)
       })
+}
+
+const App = () => {
+  const [pilots, setPilots] = useState([])
+  // First call to show data immediately
+  getDrones(setPilots)
+  
+  // The loop to show updated data
+  useEffect(() => {
+    const intervalId = setInterval(() =>{
+    getDrones(setPilots)
     }, 2000)
     return () => clearInterval(intervalId)
   }, [])

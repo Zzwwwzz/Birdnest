@@ -1,3 +1,5 @@
+// Handles single pilot as list element
+
 const Pilot = (pilot) => {
     return (
       <li className="pilot">
