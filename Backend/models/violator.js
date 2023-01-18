@@ -1,4 +1,4 @@
-// The schema for Mongoose
+// Model to handle Mongoose
 
 const mongoose = require('mongoose')
 
@@ -13,6 +13,7 @@ mongoose.connect(url)
     console.log('error connecting to MongoDB:', error.message)
   })
 
+// The schema for Mongoose
 const pilotSchema = new mongoose.Schema({
   serialNumber: String,
   firstName: String,
