@@ -60,7 +60,7 @@ const getViolations = async () => {
     if (drone.distance <= 100000) {
       let pilot = await Pilot.getPilots(drone)
 
-      const existingPilot = pilotData.find(
+      const existingPilot = await pilotData.find(
         p => p.serialNumber === drone.serialNumber)
       if (existingPilot) {
         updatePilot(existingPilot, pilot)
