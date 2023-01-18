@@ -1,3 +1,5 @@
+// The schema for Mongoose
+
 const mongoose = require('mongoose')
 
 const url = process.env.MONGODB_URI
@@ -12,20 +14,18 @@ mongoose.connect(url)
   })
 
 const pilotSchema = new mongoose.Schema({
-    _id: String,
-  serialNumber: {
-    type: String,
-    required: true
-  },
+  serialNumber: String,
   firstName: String,
   lastName: String,
   phoneNumber: String,
   email: String,
   violations : Array,
-  distance : Array,
+  distance : Number,
   last_seen : Date
-}, { _id: false })
+})
 
+
+// Modifies the toJSON method to get rid of _id and __v from Mongoose.
 pilotSchema.set('toJSON', {
   transform: (document, returnedObject) => {
     returnedObject.id = returnedObject._id.toString()
