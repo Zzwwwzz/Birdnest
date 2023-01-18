@@ -37,6 +37,7 @@ bower_components
 # Compiled binary addons (https://nodejs.org/api/addons.html)
 build/Release
 
+
 # Dependency directories
 node_modules/
 jspm_packages/
@@ -104,4 +105,7 @@ dist
 .tern-port
 
 .dockerignore
+.eslintignore
 fly.toml
+Backend/build
+Frontend/build
