@@ -21,9 +21,7 @@ app.use(morgan(':method :url :status :res[content-length]\
 const updatePilot = (existingPilot, pilot) => {
 
   // Check if the violation is already logged
-  if (existingPilot.violations.some(
-    coordsold => pilot.violations[0].every(
-      (coordsnew,i) => coordsnew === coordsold[i]))){
+  if (existingPilot.last_seen === pilot.last_seen.toISOString()){
     return
   }
 
@@ -60,7 +58,7 @@ const getViolations = async () => {
     if (drone.distance <= 100000) {
       let pilot = await Pilot.getPilots(drone)
 
-      const existingPilot = await pilotData.find(
+      const existingPilot = pilotData.find(
         p => p.serialNumber === drone.serialNumber)
       if (existingPilot) {
         updatePilot(existingPilot, pilot)
