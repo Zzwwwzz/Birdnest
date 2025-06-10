@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import Footer from './components/Footer'
 import PilotElement from './components/PilotElement'
 import pilotService from './services/pilots'
+import './App.css'
 
 
 const closestViolation = (pilots) => {
