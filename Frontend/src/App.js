@@ -22,7 +22,8 @@ const App = () => {
     pilotService
       .getAll()
       .then(allPilots => {
-        setPilots(allPilots)
+        const sorted = [...allPilots].sort((a, b) => a.distance - b.distance)
+        setPilots(sorted)
       })
     }, 2000)
     return () => clearInterval(intervalId)
