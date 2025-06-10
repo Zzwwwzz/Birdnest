@@ -3,8 +3,8 @@ const xml2js = require('xml2js')
 
 // Calculate the Euclidean distance of position to the NDZ origin.
 const calculateDistance = ( position ) => {
-  let x = position[0]
-  let y = position[1]
+  const x = position[0]
+  const y = position[1]
   return (Math.floor(Math.sqrt((x - 250000) ** 2 + (y - 250000) ** 2)))
 }
 
@@ -36,4 +36,8 @@ const getDrones = async () => {
   return parseDrones(data)
 }
 
-module.exports = { getDrones }
+module.exports = {
+  getDrones,
+  calculateDistance,
+  parseDrones,
+}
