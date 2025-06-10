@@ -54,19 +54,21 @@ const getViolations = async () => {
   const drones = data.drones
   const timestamp = data.timestamp
 
-  for (const drone of drones) {
-    if (drone.distance <= 100000) {
-      let pilot = await Pilot.getPilots(drone)
+  const pilotsToFetch = drones
+    .filter(d => d.distance <= 100000)
+    .map(d => Pilot.getPilots(d))
 
-      const existingPilot = pilotData.find(
-        p => p.serialNumber === drone.serialNumber)
-      if (existingPilot) {
-        updatePilot(existingPilot, pilot)
-      } else {
-        addPilot(pilot)
-      }
+  const pilotResults = await Promise.all(pilotsToFetch)
+
+  pilotResults.forEach(pilot => {
+    const existingPilot = pilotData.find(
+      p => p.serialNumber === pilot.serialNumber)
+    if (existingPilot) {
+      updatePilot(existingPilot, pilot)
+    } else {
+      addPilot(pilot)
     }
-  }
+  })
 
   for (const pilot of pilotData) {
     if (timestamp - new Date(pilot.last_seen) > 600000) {
